@@ -1,0 +1,30 @@
+name: cam_nang_cham_vo_yeu
+description: Cẩm nang chăm sóc và đồng hành cùng vợ, lưu dữ liệu trên thiết bị.
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.5.3
+  material_ui: ^1.11.1
+  flutter_local_notifications: ^23.0.4
+  timezone: ^0.11.2
+  flutter_timezone: ^5.1.1
+  path_provider: ^2.1.6
+  share_plus: ^13.3.1
+  file_picker: ^13.4.1
+  local_auth: ^3.0.2
+  crypto: ^3.0.8
+  flutter_secure_storage: ^11.2.0
+  cryptography: ^2.9.0
+  image_picker: ^1.2.4
+  url_launcher: ^6.3.3
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+flutter:
+  uses-material-design: true
+

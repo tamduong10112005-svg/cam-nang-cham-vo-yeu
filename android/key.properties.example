@@ -1,0 +1,5 @@
+# Copy to android/key.properties and enter your private upload keystore details.
+storePassword=REPLACE_WITH_YOUR_PASSWORD
+keyPassword=REPLACE_WITH_YOUR_PASSWORD
+keyAlias=upload
+storeFile=upload-keystore.jks
