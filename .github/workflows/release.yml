@@ -1,9 +1,12 @@
 name: Build and publish Android release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing or new release tag, for example v1.0.1
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -14,6 +17,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
 
       - name: Install Java
         uses: actions/setup-java@v4
@@ -28,12 +33,14 @@ jobs:
           cache: true
 
       - name: Verify version tag
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         shell: bash
         run: |
           app_version="$(sed -n 's/^version: \([^+]*\)+.*/\1/p' pubspec.yaml)"
-          tag_version="${GITHUB_REF_NAME#v}"
+          tag_version="${RELEASE_TAG#v}"
           if [[ -z "$app_version" || "$app_version" != "$tag_version" ]]; then
-            echo "Tag $GITHUB_REF_NAME must match pubspec version $app_version"
+            echo "Tag $RELEASE_TAG must match pubspec version $app_version"
             exit 1
           fi
 
@@ -63,8 +70,14 @@ jobs:
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk cam-nang-cham-vo-yeu.apk
-          gh release create "$GITHUB_REF_NAME" cam-nang-cham-vo-yeu.apk \
-            --title "Cẩm nang chăm vợ yêu $GITHUB_REF_NAME" \
-            --generate-notes
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" cam-nang-cham-vo-yeu.apk --clobber
+          else
+            gh release create "$RELEASE_TAG" cam-nang-cham-vo-yeu.apk \
+              --title "Cẩm nang chăm vợ yêu $RELEASE_TAG" \
+              --generate-notes
+          fi
+
