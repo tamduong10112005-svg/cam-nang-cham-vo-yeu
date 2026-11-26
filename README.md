@@ -70,7 +70,7 @@ APK được tạo ở `build/app/outputs/flutter-apk/`.
    ```
 
    Dán clipboard vào secret `ANDROID_KEYSTORE_BASE64`. Nhập alias và mật khẩu qua giao diện GitHub Secrets; không ghi chúng vào source.
-4. Mỗi lần phát hành, tăng `version:` trong `pubspec.yaml` (ví dụ `1.0.1+2`), commit/push, rồi tạo tag cùng số phiên bản, ví dụ `v1.0.1`. GitHub Actions sẽ build APK ký bằng khóa riêng và đính kèm APK vào Release. Ứng dụng đã cài sẽ nhìn thấy bản mới ở lần người dùng chọn **Cập nhật ứng dụng**.
+4. Mỗi lần phát hành, tăng `version:` trong `pubspec.yaml` (ví dụ `1.0.2+3`) và push source. Tạo Release/tag mới trên GitHub, ví dụ `v1.0.2`, rồi mở **Actions → Build and publish Android release → Run workflow** và nhập tag đó. GitHub Actions sẽ build APK ký bằng khóa riêng và đính kèm APK vào Release. Ứng dụng đã cài sẽ nhìn thấy bản mới ở lần người dùng chọn **Cập nhật ứng dụng**.
 
 Không tạo khóa ký mới sau khi đã phát hành. Bản APK phát hành lần đầu cần được cài bằng cùng khóa mà GitHub Actions dùng cho mọi lần cập nhật. Nếu điện thoại đang có bản debug ký bằng khóa khác, cần sao lưu dữ liệu rồi chuyển sang bản release một lần; các lần sau sẽ cài đè bình thường.
 
