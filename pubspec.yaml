@@ -1,7 +1,7 @@
 name: cam_nang_cham_vo_yeu
 description: Cẩm nang chăm sóc và đồng hành cùng vợ, lưu dữ liệu trên thiết bị.
 publish_to: none
-version: 1.0.3+4
+version: 1.0.4+5
 environment:
   sdk: '>=3.4.0 <4.0.0'
 dependencies:
