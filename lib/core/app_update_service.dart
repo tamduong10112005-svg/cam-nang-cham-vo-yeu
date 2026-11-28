@@ -23,7 +23,7 @@ class AppUpdateService {
 
   static const _channel = MethodChannel('vn.camnangchamvoyeu/app_update');
   static const _repository = String.fromEnvironment('UPDATE_REPOSITORY');
-  static const _apkName = 'cam-nang-cham-vo-yeu.apk';
+  static const _apkName = 'app-release.apk';
   static const _maxApkSize = 250 * 1024 * 1024;
 
   static bool get isConfigured =>
@@ -172,3 +172,4 @@ class AppUpdateService {
     ];
   }
 }
+
