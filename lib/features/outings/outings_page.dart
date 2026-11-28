@@ -14,7 +14,24 @@ String _formatMoney(int value) {
     if (i > 0 && (digits.length - i) % 3 == 0) grouped.write('.');
     grouped.write(digits[i]);
   }
-  return '${grouped} ₫';
+  return '$grouped ₫';
+}
+
+Future<void> _shareTrip(
+    OutingTrip trip, List<OutingStop> stops, int total) async {
+  final lines = <String>[trip.name.toUpperCase(), ''];
+  for (final stop in stops) {
+    lines.add('${stop.timeRange} — ${stop.place}');
+    if (stop.address.isNotEmpty) lines.add('Địa chỉ: ${stop.address}');
+    if (stop.link.isNotEmpty) lines.add('Bản đồ: ${stop.link}');
+    if (stop.note.isNotEmpty) lines.add('Ghi chú: ${stop.note}');
+    if (stop.cost > 0) {
+      lines.add('Chi phí dự kiến: ${_formatMoney(stop.cost)}');
+    }
+    lines.add('');
+  }
+  lines.add('Tổng chi phí dự kiến: ${_formatMoney(total)}');
+  await SharePlus.instance.share(ShareParams(text: lines.join('\n')));
 }
 
 class OutingsPage extends StatefulWidget {
@@ -81,21 +98,31 @@ class _OutingsPageState extends State<OutingsPage> {
         padding: const EdgeInsets.only(bottom: 12),
         child: SoftCard(
             child: ListTile(
+                dense: true,
+                visualDensity: const VisualDensity(vertical: -2),
+                minVerticalPadding: 6,
                 contentPadding: EdgeInsets.zero,
                 leading: const CircleAvatar(
                     backgroundColor: Color(0xFFFFF1F5),
                     child: Icon(Icons.map_outlined, color: Color(0xFFB85F7D))),
                 title: Text(trip.name,
                     style: const TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: Text(
-                    '${stops.length} điểm đến · Tổng dự kiến ${_formatMoney(total)}'),
+                subtitle: Text('${stops.length} điểm · ${_formatMoney(total)}',
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
                 trailing: PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'rename') _rename(trip);
-                      if (value == 'delete')
+                      if (value == 'delete') {
                         widget.store.deleteOutingTrip(trip.id);
+                      }
+                      if (value == 'share') {
+                        _shareTrip(trip, stops, total);
+                      }
                     },
                     itemBuilder: (_) => const [
+                          PopupMenuItem(
+                              value: 'share',
+                              child: Text('Chia sẻ lịch trình')),
                           PopupMenuItem(
                               value: 'rename', child: Text('Đổi tên')),
                           PopupMenuItem(
@@ -180,100 +207,89 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
               onPressed: () => _edit(),
               icon: const Icon(Icons.add),
               label: const Text('Thêm khung giờ')),
-          body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 16, 0),
-                child: Row(children: [
-                  IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back),
-                      tooltip: 'Danh sách mục đi chơi'),
-                  Expanded(
-                      child: Text(widget.trip.name,
-                          style: const TextStyle(
-                              fontSize: 21, fontWeight: FontWeight.w800))),
-                  IconButton(
-                      onPressed: () => _shareItinerary(stops, totalCost),
-                      icon: const Icon(Icons.share_outlined),
-                      tooltip: 'Chia sẻ mục đi chơi'),
-                ])),
-            const PageHeading(
-                eyebrow: 'Kế hoạch của hai người',
-                title: 'Lịch trình',
-                subtitle: 'Lên lịch từng khung giờ và địa điểm.'),
-            Expanded(
-                child: stops.isEmpty
-                    ? Center(
-                        child: Padding(
-                            padding: const EdgeInsets.all(28),
-                            child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.map_outlined,
-                                      size: 54, color: Color(0xFFB85F7D)),
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                      'Chuyến đi của hai bạn bắt đầu từ đây',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w800)),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                      'Thêm khung giờ, nơi muốn đến, ghi chú và ảnh kỷ niệm.',
-                                      textAlign: TextAlign.center),
-                                  const SizedBox(height: 16),
-                                  FilledButton.icon(
-                                      onPressed: () => _edit(),
-                                      icon: const Icon(Icons.add),
-                                      label: const Text(
-                                          'Lên lịch điểm đến đầu tiên')),
-                                ])))
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                        children: [
-                            if (stops.isNotEmpty)
-                              SoftCard(
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                    Row(children: [
-                                      const Icon(Icons.payments_outlined,
-                                          color: Color(0xFFB85F7D)),
-                                      const SizedBox(width: 8),
-                                      const Expanded(
-                                          child: Text('Tổng chi phí dự kiến',
-                                              style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.w700))),
-                                      Text(_money(totalCost),
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              color: Color(0xFFB85F7D),
-                                              fontWeight: FontWeight.w800)),
-                                    ]),
+          body: SafeArea(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 16, 0),
+                  child: Row(children: [
+                    IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                        tooltip: 'Danh sách mục đi chơi'),
+                    Expanded(
+                        child: Text(widget.trip.name,
+                            style: const TextStyle(
+                                fontSize: 21, fontWeight: FontWeight.w800))),
+                  ])),
+              const PageHeading(
+                  eyebrow: 'Kế hoạch của hai người',
+                  title: 'Lịch trình',
+                  subtitle: 'Lên lịch từng khung giờ và địa điểm.'),
+              Expanded(
+                  child: stops.isEmpty
+                      ? Center(
+                          child: Padding(
+                              padding: const EdgeInsets.all(28),
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.map_outlined,
+                                        size: 54, color: Color(0xFFB85F7D)),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                        'Chuyến đi của hai bạn bắt đầu từ đây',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w800)),
                                     const SizedBox(height: 8),
-                                    SizedBox(
-                                        width: double.infinity,
-                                        child: OutlinedButton.icon(
-                                            onPressed: () => _shareItinerary(
-                                                stops, totalCost),
-                                            icon: const Icon(
-                                                Icons.share_outlined),
-                                            label: const Text(
-                                                'Chia sẻ lịch trình'))),
-                                  ])),
-                            const SizedBox(height: 12),
-                            ...List.generate(stops.length,
-                                (index) => _card(stops[index], index + 1)),
-                            const SizedBox(height: 12),
-                            OutlinedButton.icon(
-                                onPressed: () => _edit(),
-                                icon: const Icon(Icons.add),
-                                label: const Text('Thêm điểm đến tiếp theo')),
-                          ]))
-          ]),
+                                    const Text(
+                                        'Thêm khung giờ, nơi muốn đến, ghi chú và ảnh kỷ niệm.',
+                                        textAlign: TextAlign.center),
+                                    const SizedBox(height: 16),
+                                    FilledButton.icon(
+                                        onPressed: () => _edit(),
+                                        icon: const Icon(Icons.add),
+                                        label: const Text(
+                                            'Lên lịch điểm đến đầu tiên')),
+                                  ])))
+                      : ListView(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                          children: [
+                              if (stops.isNotEmpty)
+                                SoftCard(
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                      Row(children: [
+                                        const Icon(Icons.payments_outlined,
+                                            color: Color(0xFFB85F7D)),
+                                        const SizedBox(width: 8),
+                                        const Expanded(
+                                            child: Text('Tổng chi phí dự kiến',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w700))),
+                                        Text(_money(totalCost),
+                                            style: const TextStyle(
+                                                fontSize: 18,
+                                                color: Color(0xFFB85F7D),
+                                                fontWeight: FontWeight.w800)),
+                                      ]),
+                                    ])),
+                              const SizedBox(height: 12),
+                              ...List.generate(stops.length,
+                                  (index) => _card(stops[index], index + 1)),
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                  onPressed: () => _edit(),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Thêm điểm đến tiếp theo')),
+                            ]))
+            ]),
+          ),
         );
       });
 
@@ -359,21 +375,7 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
       if (i > 0 && (digits.length - i) % 3 == 0) grouped.write('.');
       grouped.write(digits[i]);
     }
-    return '${grouped} ₫';
-  }
-
-  Future<void> _shareItinerary(List<OutingStop> stops, int total) async {
-    final lines = <String>[widget.trip.name.toUpperCase(), ''];
-    for (final stop in stops) {
-      lines.add('${stop.timeRange} — ${stop.place}');
-      if (stop.address.isNotEmpty) lines.add('Địa chỉ: ${stop.address}');
-      if (stop.link.isNotEmpty) lines.add('Bản đồ: ${stop.link}');
-      if (stop.note.isNotEmpty) lines.add('Ghi chú: ${stop.note}');
-      if (stop.cost > 0) lines.add('Chi phí dự kiến: ${_money(stop.cost)}');
-      lines.add('');
-    }
-    lines.add('Tổng chi phí dự kiến: ${_money(total)}');
-    await SharePlus.instance.share(ShareParams(text: lines.join('\n')));
+    return '$grouped ₫';
   }
 
   Future<void> _open(OutingStop s) async {
@@ -382,9 +384,11 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
       return;
     }
     try {
-      if (!await launchUrl(u, mode: LaunchMode.externalApplication) && mounted)
+      if (!await launchUrl(u, mode: LaunchMode.externalApplication) &&
+          mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Không mở được địa điểm.')));
+      }
     } catch (_) {}
   }
 
@@ -470,11 +474,12 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
                                   setSheet(() => photo = p);
                                 }
                               } on PlatformException {
-                                if (ctx.mounted)
+                                if (ctx.mounted) {
                                   ScaffoldMessenger.of(ctx).showSnackBar(
                                       const SnackBar(
                                           content: Text(
                                               'Không thể mở thư viện ảnh.')));
+                                }
                               }
                             },
                             icon:
@@ -530,8 +535,9 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
           imagePath: photo,
           cost:
               int.tryParse(cost.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0));
-      if (old?.imagePath != null && old!.imagePath != photo)
+      if (old?.imagePath != null && old!.imagePath != photo) {
         await widget.store.deleteImage(old.imagePath!);
+      }
     } else if (photo != null && photo != old?.imagePath) {
       await widget.store.deleteImage(photo!);
     }
