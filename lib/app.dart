@@ -66,6 +66,15 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ProfilePage.checkForUpdate(context, automatic: true);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
