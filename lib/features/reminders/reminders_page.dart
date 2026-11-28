@@ -146,6 +146,8 @@ class _RemindersPageState extends State<RemindersPage> {
                   if (entry.date != null) _date(entry.date!),
                   if (entry.repeat == 'monthly') 'Lặp hằng tháng',
                   if (entry.repeat == 'yearly') 'Lặp hằng năm',
+                  if (entry.repeat == 'daily') 'Lặp hằng ngày',
+                  if (entry.repeat == 'weekly') 'Lặp hằng tuần',
                   if (entry.details.isNotEmpty) entry.details,
                   if (entry.notification) 'Có thông báo hiện nội dung'
                 ].join(' · '),
@@ -380,6 +382,10 @@ class _RemindersPageState extends State<RemindersPage> {
                               DropdownMenuItem(
                                   value: 'none', child: Text('Không lặp')),
                               DropdownMenuItem(
+                                  value: 'daily', child: Text('Hằng ngày')),
+                              DropdownMenuItem(
+                                  value: 'weekly', child: Text('Hằng tuần')),
+                              DropdownMenuItem(
                                   value: 'monthly', child: Text('Hằng tháng')),
                               DropdownMenuItem(
                                   value: 'yearly', child: Text('Hằng năm')),
@@ -451,3 +457,4 @@ class _RemindersPageState extends State<RemindersPage> {
   static String _date(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
+
