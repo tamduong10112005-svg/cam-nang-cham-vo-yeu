@@ -1,9 +1,10 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/local_store.dart';
+import '../../core/stored_image.dart';
 import '../../shared/widgets.dart';
 
 class NotebookPage extends StatefulWidget {
@@ -153,11 +154,11 @@ class _NotebookPageState extends State<NotebookPage> {
 
   Widget _leading(NoteEntry entry) {
     final path = entry.imagePath;
-    if (path != null && File(path).existsSync()) {
+    if (path != null && storedImageExists(path)) {
       return ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child:
-              Image.file(File(path), width: 50, height: 50, fit: BoxFit.cover));
+          child: storedImageWidget(path,
+              width: 50, height: 50, fit: BoxFit.cover));
     }
     return CircleAvatar(
         backgroundColor: const Color(0xFFFFF1F5),
@@ -311,10 +312,10 @@ class _NotebookPageState extends State<NotebookPage> {
                                 labelText: 'Ghi chú thêm',
                                 hintText: _hint(category))),
                         const SizedBox(height: 10),
-                        if (imagePath != null && File(imagePath!).existsSync())
+                        if (imagePath != null && storedImageExists(imagePath!))
                           ClipRRect(
                               borderRadius: BorderRadius.circular(18),
-                              child: Image.file(File(imagePath!),
+                              child: storedImageWidget(imagePath!,
                                   height: 150,
                                   width: double.infinity,
                                   fit: BoxFit.cover)),
@@ -324,8 +325,8 @@ class _NotebookPageState extends State<NotebookPage> {
                                 try {
                                   final image = await ImagePicker().pickImage(
                                       source: ImageSource.gallery,
-                                      imageQuality: 82,
-                                      maxWidth: 1800);
+                                      imageQuality: kIsWeb ? 65 : 82,
+                                      maxWidth: kIsWeb ? 1000 : 1800);
                                   if (image != null) {
                                     final path = await widget.store
                                         .saveImageBytes(

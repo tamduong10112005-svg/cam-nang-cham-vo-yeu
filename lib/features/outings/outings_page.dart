@@ -1,10 +1,11 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/local_store.dart';
+import '../../core/stored_image.dart';
 import '../../shared/widgets.dart';
 
 String _formatMoney(int value) {
@@ -327,11 +328,11 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
                     PopupMenuItem(value: 'delete', child: Text('Xóa'))
                   ]),
         ]),
-        if (s.imagePath != null && File(s.imagePath!).existsSync()) ...[
+        if (s.imagePath != null && storedImageExists(s.imagePath!)) ...[
           const SizedBox(height: 12),
           ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.file(File(s.imagePath!),
+              child: storedImageWidget(s.imagePath!,
                   width: double.infinity, height: 190, fit: BoxFit.cover))
         ],
         if (s.address.isNotEmpty)
@@ -453,10 +454,10 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
                               labelText: 'Chi phí dự kiến (đồng)',
                               hintText: 'Để trống nếu chưa biết')),
                       const SizedBox(height: 10),
-                      if (photo != null && File(photo!).existsSync())
+                      if (photo != null && storedImageExists(photo!))
                         ClipRRect(
                             borderRadius: BorderRadius.circular(16),
-                            child: Image.file(File(photo!),
+                            child: storedImageWidget(photo!,
                                 height: 160,
                                 width: double.infinity,
                                 fit: BoxFit.cover)),
@@ -466,8 +467,8 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
                               try {
                                 final x = await ImagePicker().pickImage(
                                     source: ImageSource.gallery,
-                                    imageQuality: 82,
-                                    maxWidth: 1800);
+                                    imageQuality: kIsWeb ? 65 : 82,
+                                    maxWidth: kIsWeb ? 1000 : 1800);
                                 if (x != null) {
                                   final p = await widget.store
                                       .saveImageBytes(await x.readAsBytes());
@@ -549,4 +550,3 @@ class _OutingDetailPageState extends State<_OutingDetailPage> {
     cost.dispose();
   }
 }
-

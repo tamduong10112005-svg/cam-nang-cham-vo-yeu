@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'core/local_store.dart';
 import 'core/security.dart';
@@ -230,7 +231,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
                 child: FilledButton(
                     onPressed: _busy ? null : _unlock,
                     child: const Text('Mở khóa'))),
-            if (widget.store.biometricEnabled)
+            if (!kIsWeb && widget.store.biometricEnabled)
               TextButton.icon(
                   onPressed: _busy ? null : _biometric,
                   icon: const Icon(Icons.fingerprint),
@@ -239,4 +240,3 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     ))));
   }
 }
-

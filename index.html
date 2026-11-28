@@ -2,40 +2,50 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#6c3ce8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff7fa">
+  <meta name="description" content="Tải Cẩm nang chăm vợ yêu cho Android hoặc dùng như ứng dụng trên iPhone.">
   <title>Cẩm nang chăm vợ yêu — Tải ứng dụng</title>
-  <meta name="description" content="Tải phiên bản Android mới nhất của Cẩm nang chăm vợ yêu.">
   <style>
-    :root{color-scheme:light;--ink:#211b32;--muted:#6c6578;--purple:#6c3ce8;--pink:#ff6b9d}
-    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:linear-gradient(145deg,#fff4f7,#f5f0ff 52%,#eff8ff);min-height:100vh}
-    main{width:min(900px,92%);margin:auto;padding:38px 0 56px}.brand{font-size:14px;font-weight:750;letter-spacing:.04em;color:var(--purple)}
-    .hero{margin-top:26px;background:#ffffffd9;border:1px solid #fff;border-radius:28px;padding:clamp(28px,6vw,64px);box-shadow:0 24px 80px #35215a18}
-    .heart{font-size:48px}h1{font-size:clamp(34px,7vw,62px);line-height:1.08;letter-spacing:-.04em;margin:12px 0 18px}.intro{font-size:18px;line-height:1.7;color:var(--muted);max-width:620px}
-    .actions{display:flex;flex-wrap:wrap;gap:12px;margin:30px 0 18px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:0 24px;border-radius:15px;font-weight:750;text-decoration:none}.primary{color:white;background:linear-gradient(120deg,var(--purple),#9258f6);box-shadow:0 10px 24px #6c3ce844}.secondary{color:var(--purple);background:#f2edff}
-    .note{font-size:14px;color:var(--muted);line-height:1.65}.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:22px}.feature{padding:18px;background:#fff;border:1px solid #eee9f7;border-radius:18px}.feature b{display:block;margin-bottom:6px}.feature span{color:var(--muted);font-size:14px;line-height:1.5}
-    footer{text-align:center;color:var(--muted);font-size:13px;padding:28px 8px}footer a{color:var(--purple)}
+    :root{color-scheme:light;--ink:#292334;--muted:#786d78;--pink:#b85f7d;--pink2:#f7e5ec;--blue:#3979b8;--line:#eee5e9;--paper:#fff;--bg:#fff7fa}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 8% 0%,#fbe7ef 0,transparent 35rem),var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+    .wrap{max-width:1050px;margin:auto;padding:28px 22px 60px}.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.02em}.mark{width:44px;height:44px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(145deg,#f4c9da,#fff);font-size:23px;box-shadow:0 8px 24px #b85f7d20}.hero{padding:70px 0 36px;max-width:720px}.eyebrow{color:var(--pink);font-weight:800;letter-spacing:.15em;font-size:13px;text-transform:uppercase}.hero h1{font-size:clamp(38px,7vw,66px);line-height:1.08;letter-spacing:-.045em;margin:14px 0}.hero p{font-size:19px;color:var(--muted);max-width:640px;margin:16px 0 0}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:#ffffffed;border:1px solid var(--line);border-radius:26px;padding:26px;box-shadow:0 14px 40px #56313c0b}.card-head{display:flex;align-items:center;gap:14px}.device{width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:var(--pink2);font-size:26px}.card h2{font-size:23px;margin:0}.card p{color:var(--muted);margin:6px 0 20px}.actions{display:flex;flex-wrap:wrap;gap:10px}.button{min-height:52px;border-radius:16px;padding:12px 19px;display:inline-flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;font-weight:750;transition:transform .15s,box-shadow .15s}.button:hover{transform:translateY(-1px);box-shadow:0 8px 20px #31233418}.primary{background:linear-gradient(120deg,#bd5591,#8646d5);color:white}.secondary{background:#f2effb;color:#5e46af}.footnote{font-size:13px!important;margin:14px 0 0!important}.install{margin-top:24px;padding:19px 22px;border:1px solid var(--line);border-radius:20px;background:#fff}.install summary{cursor:pointer;font-weight:750;color:#554565}.install ol{margin:13px 0 2px;padding-left:22px;color:var(--muted)}.install li+li{margin-top:7px}.features{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:26px}.feature{border:1px solid var(--line);border-radius:18px;background:#ffffffa8;padding:17px}.feature b{display:block;margin-bottom:3px}.feature span{color:var(--muted);font-size:14px}.privacy{margin-top:30px;color:var(--muted);font-size:13px}.privacy a{color:var(--pink)}footer{padding-top:30px;color:#988d97;font-size:13px}
+    @media(max-width:680px){.wrap{padding:20px 16px 42px}.hero{padding:48px 2px 27px}.hero p{font-size:17px}.cards{grid-template-columns:1fr}.card{padding:22px;border-radius:22px}.features{grid-template-columns:1fr}.feature{padding:14px}.button{width:100%}}
   </style>
 </head>
 <body>
-<main>
-  <div class="brand">💜 CẨM NANG CHĂM VỢ YÊU</div>
-  <section class="hero">
-    <div class="heart" aria-hidden="true">💝</div>
-    <h1>Quan tâm mỗi ngày,<br>yêu thương dài lâu.</h1>
-    <p class="intro">Những lời nhắc, kỷ niệm và điều nhỏ bé giúp bạn luôn nhớ chăm sóc người mình yêu.</p>
-    <div class="actions">
-      <a class="button primary" href="https://github.com/tamduong10112005-svg/cam-nang-cham-vo-yeu/releases/latest/download/app-release.apk">Tải ứng dụng Android</a>
-      <a class="button secondary" href="https://github.com/tamduong10112005-svg/cam-nang-cham-vo-yeu/releases/latest">Xem phiên bản mới nhất</a>
-    </div>
-    <p class="note">Nút tải luôn chuyển đến APK của release mới nhất. Khi có bản mới, chỉ cần phát hành release mới với tệp <b>app-release.apk</b>; liên kết tải trên trang sẽ tự động theo bản mới đó.</p>
-    <div class="features">
-      <div class="feature"><b>🌷 Quan tâm tinh tế</b><span>Lưu những điều cô ấy thích và các dịp quan trọng.</span></div>
-      <div class="feature"><b>📅 Nhắc nhở hữu ích</b><span>Gợi nhắc theo tháng và theo năm để không bỏ lỡ ngày đặc biệt.</span></div>
-      <div class="feature"><b>📍 Địa điểm dễ mở</b><span>Lưu địa chỉ hoặc liên kết bản đồ để mở nhanh khi cần.</span></div>
-    </div>
-  </section>
-  <footer>Mã nguồn và các phiên bản phát hành trên <a href="https://github.com/tamduong10112005-svg/cam-nang-cham-vo-yeu">GitHub</a>.</footer>
-</main>
+  <main class="wrap">
+    <div class="brand"><span class="mark" aria-hidden="true">💝</span><span>CẨM NANG CHĂM VỢ YÊU</span></div>
+    <section class="hero">
+      <div class="eyebrow">Quan tâm mỗi ngày, yêu thương dài lâu</div>
+      <h1>Những điều nhỏ bé, dành riêng cho hai người.</h1>
+      <p>Lưu lời nhắc và kỷ niệm, ghi lại điều cô ấy thích, lên lịch hẹn hò và giữ mọi thứ riêng tư trên thiết bị của bạn.</p>
+    </section>
+    <section class="cards" aria-label="Chọn thiết bị">
+      <article class="card">
+        <div class="card-head"><div class="device" aria-hidden="true">🤖</div><div><h2>Android</h2><span class="eyebrow">Ứng dụng Android</span></div></div>
+        <p>Tải APK mới nhất trực tiếp từ bản phát hành chính thức.</p>
+        <div class="actions"><a class="button primary" href="https://github.com/tamduong10112005-svg/cam-nang-cham-vo-yeu/releases/latest/download/app-release.apk">↓ Tải ứng dụng Android</a><a class="button secondary" href="https://github.com/tamduong10112005-svg/cam-nang-cham-vo-yeu/releases/latest">Xem phiên bản mới nhất</a></div>
+        <p class="footnote">Khi phát hành APK mới, nút tải sẽ tự trỏ đến bản mới nhất.</p>
+      </article>
+      <article class="card">
+        <div class="card-head"><div class="device" aria-hidden="true"></div><div><h2>iPhone</h2><span class="eyebrow">Dùng như ứng dụng</span></div></div>
+        <p>Mở phiên bản web rồi thêm biểu tượng ra Màn hình chính. Không cần tải tệp hay qua App Store.</p>
+        <div class="actions"><a class="button primary" href="./app/">♡ Mở ứng dụng trên iPhone</a></div>
+        <details class="install">
+          <summary>Cách thêm vào Màn hình chính</summary>
+          <ol><li>Mở trang ứng dụng bằng Safari trên iPhone.</li><li>Chạm nút Chia sẻ ở thanh công cụ Safari.</li><li>Chọn <b>Thêm vào MH chính</b>, rồi chạm <b>Thêm</b>.</li><li>Mở biểu tượng Cẩm nang chăm vợ yêu vừa xuất hiện trên Màn hình chính.</li></ol>
+        </details>
+        <p class="footnote">Đây là ứng dụng web cài lên màn hình chính (PWA), không phải ứng dụng App Store.</p>
+      </article>
+    </section>
+    <section class="features" aria-label="Tính năng">
+      <div class="feature"><b>🌷 Quan tâm tinh tế</b><span>Lưu sở thích, ghi chú và kỷ niệm quan trọng.</span></div>
+      <div class="feature"><b>🗓️ Lịch hẹn hò</b><span>Lên khung giờ, địa điểm, ảnh và chi phí dự kiến.</span></div>
+      <div class="feature"><b>🔒 Riêng tư</b><span>Dữ liệu của Android và iPhone được lưu riêng trên từng thiết bị.</span></div>
+    </section>
+    <p class="privacy">Dữ liệu không tự đồng bộ giữa Android và iPhone. Hãy dùng chức năng sao lưu/khôi phục nếu muốn chuyển dữ liệu. <a href="https://github.com/tamduong10112005-svg/cam-nang-cham-vo-yeu">Mã nguồn và thông tin dự án</a></p>
+    <footer>© Cẩm nang chăm vợ yêu</footer>
+  </main>
 </body>
 </html>

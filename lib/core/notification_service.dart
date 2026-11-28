@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -10,6 +12,7 @@ class NotificationService {
   static final instance = NotificationService._();
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  final List<Timer> _webTimers = [];
   bool _ready = false;
 
   Future<void> initialize() async {
@@ -23,6 +26,7 @@ class NotificationService {
     }
     await _plugin.initialize(
         settings: const InitializationSettings(
+      web: WebInitializationSettings(),
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
@@ -48,12 +52,23 @@ class NotificationService {
           ?.requestPermissions(alert: true, badge: true, sound: true);
       return result ?? true;
     }
+    if (kIsWeb) {
+      return await _plugin
+              .resolvePlatformSpecificImplementation<
+                  WebFlutterLocalNotificationsPlugin>()
+              ?.requestNotificationsPermission() ??
+          false;
+    }
     return true;
   }
 
   Future<void> reschedule(LocalStore store) async {
     await initialize();
     await _plugin.cancelAll();
+    if (kIsWeb) {
+      _rescheduleWeb(store);
+      return;
+    }
     if (store.notificationEnabled('season')) {
       final now = tz.TZDateTime.now(tz.local);
       var first = tz.TZDateTime(
@@ -200,5 +215,143 @@ class NotificationService {
       }
     }
   }
-}
 
+  void _rescheduleWeb(LocalStore store) {
+    for (final timer in _webTimers) {
+      timer.cancel();
+    }
+    _webTimers.clear();
+
+    final now = DateTime.now();
+    if (store.notificationEnabled('season')) {
+      var first = DateTime(now.year, now.month, now.day, store.reminderHour);
+      if (!first.isAfter(now)) first = first.add(const Duration(days: 1));
+      _scheduleWeb(
+          10,
+          'Cẩm nang chăm vợ yêu',
+          'Mở cẩm nang để xem gợi ý chăm sóc theo mùa hôm nay.',
+          first,
+          () => _rescheduleWeb(store));
+    }
+
+    if (store.notificationEnabled('cycle') && store.cycleStart != null) {
+      final predicted = store.cycleStart!
+          .add(Duration(days: store.cycleLength))
+          .subtract(const Duration(days: 1));
+      final cycleNotice = DateTime(
+          predicted.year, predicted.month, predicted.day, store.reminderHour);
+      if (cycleNotice.isAfter(now)) {
+        _scheduleWeb(
+            20,
+            'Cẩm nang chăm vợ yêu',
+            'Có thể chuẩn bị sẵn vật dụng cần thiết. Mở ứng dụng để xem lịch riêng tư.',
+            cycleNotice,
+            () => _rescheduleWeb(store));
+      }
+    }
+
+    for (final entry in store.planner.where((item) {
+      final group = switch (item.kind) {
+        'Kỷ niệm' => 'anniversary',
+        'Sức khỏe' => 'health',
+        _ => 'task',
+      };
+      return item.notification &&
+          item.date != null &&
+          !item.done &&
+          store.notificationEnabled(group);
+    })) {
+      final isAnnual = entry.repeat == 'yearly';
+      final occurrence = _nextWebOccurrence(
+          entry.date!, now, store.reminderHour, entry.repeat);
+      final offsets =
+          entry.kind == 'Kỷ niệm' && isAnnual ? [30, 7, 3, 1, 0] : [0];
+      for (final daysBefore in offsets) {
+        var target = occurrence.subtract(Duration(days: daysBefore));
+        if (!target.isAfter(now)) {
+          if (isAnnual) {
+            final nextYearOccurrence = _nextWebOccurrence(
+                DateTime(occurrence.year + 1, occurrence.month, occurrence.day),
+                now,
+                store.reminderHour,
+                'yearly');
+            target = nextYearOccurrence.subtract(Duration(days: daysBefore));
+          } else {
+            continue;
+          }
+        }
+        final id = 100 +
+            ((entry.id.hashCode & 0x7fffffff) % 100000) * 100 +
+            daysBefore;
+        final body = [
+          if (daysBefore > 0) 'Còn $daysBefore ngày.',
+          if (entry.details.trim().isNotEmpty) entry.details.trim(),
+        ].join(' ');
+        _scheduleWeb(
+            id, entry.title, body, target, () => _rescheduleWeb(store));
+      }
+    }
+  }
+
+  void _scheduleWeb(int id, String title, String body, DateTime when,
+      VoidCallback reschedule) {
+    final delay = when.difference(DateTime.now());
+    if (delay.isNegative || delay == Duration.zero) return;
+    _webTimers.add(Timer(delay, () async {
+      try {
+        await _plugin.show(
+            id: id,
+            title: title,
+            body: body,
+            notificationDetails:
+                const NotificationDetails(web: WebNotificationDetails()));
+      } catch (_) {}
+      reschedule();
+    }));
+  }
+
+  DateTime _nextWebOccurrence(
+      DateTime initial, DateTime now, int hour, String repeat) {
+    var year = now.year;
+    var month = now.month;
+    final day = initial.day;
+    switch (repeat) {
+      case 'daily':
+        var candidate = DateTime(year, month, now.day, hour);
+        if (!candidate.isAfter(now)) {
+          candidate = candidate.add(const Duration(days: 1));
+        }
+        return candidate;
+      case 'weekly':
+        final daysUntil = (initial.weekday - now.weekday + 7) % 7;
+        var candidate =
+            DateTime(year, month, now.day, hour).add(Duration(days: daysUntil));
+        if (!candidate.isAfter(now)) {
+          candidate = candidate.add(const Duration(days: 7));
+        }
+        return candidate;
+      case 'monthly':
+        while (true) {
+          final lastDay = DateTime(year, month + 1, 0).day;
+          final candidate = DateTime(year, month, day.clamp(1, lastDay), hour,
+              initial.minute, initial.second);
+          if (candidate.isAfter(now)) return candidate;
+          month++;
+          if (month == 13) {
+            month = 1;
+            year++;
+          }
+        }
+      case 'yearly':
+        while (true) {
+          final lastDay = DateTime(year, initial.month + 1, 0).day;
+          final candidate = DateTime(year, initial.month, day.clamp(1, lastDay),
+              hour, initial.minute, initial.second);
+          if (candidate.isAfter(now)) return candidate;
+          year++;
+        }
+      default:
+        return DateTime(initial.year, initial.month, initial.day, hour);
+    }
+  }
+}

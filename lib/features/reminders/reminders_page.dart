@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import '../../core/local_store.dart';
 import '../../core/notification_service.dart';
@@ -65,6 +66,7 @@ class _RemindersPageState extends State<RemindersPage> {
                       children: [
                     if (_kind == 'Kỷ niệm') _seasonPanel(rainy),
                     if (entries.isEmpty) _emptyState(),
+                    if (kIsWeb) _webReminderNotice(),
                     ...entries.map(_entryCard),
                     const SizedBox(height: 8),
                     _dailyReminderCard(),
@@ -83,6 +85,15 @@ class _RemindersPageState extends State<RemindersPage> {
             ]),
           );
         },
+      );
+
+  Widget _webReminderNotice() => const Padding(
+        padding: EdgeInsets.fromLTRB(20, 10, 20, 0),
+        child: Text(
+          'Trên iPhone, hãy thêm ứng dụng vào Màn hình chính và cho phép thông báo. Nhắc hẹn chạy khi ứng dụng đang mở; để báo đúng giờ khi đã đóng ứng dụng cần máy chủ gửi thông báo.',
+          style:
+              TextStyle(fontSize: 12, height: 1.45, color: Color(0xFF826E77)),
+        ),
       );
 
   Widget _emptyState() => Padding(
@@ -457,4 +468,3 @@ class _RemindersPageState extends State<RemindersPage> {
   static String _date(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
-

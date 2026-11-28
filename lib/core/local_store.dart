@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'stored_image.dart';
 
 @immutable
 class NoteEntry {
@@ -382,25 +381,9 @@ class LocalStore extends ChangeNotifier {
     await _saveList(_notesKey, _notes, (e) => e.toJson());
   }
 
-  Future<String> saveImageBytes(List<int> bytes) async {
-    final root = await getApplicationDocumentsDirectory();
-    final dir =
-        Directory('${root.path}${Platform.pathSeparator}love_care_photos');
-    await dir.create(recursive: true);
-    final file = File(
-        '${dir.path}${Platform.pathSeparator}image_${DateTime.now().microsecondsSinceEpoch}.bin');
-    await file.writeAsBytes(bytes, flush: true);
-    return file.path;
-  }
+  Future<String> saveImageBytes(List<int> bytes) => saveStoredImage(bytes);
 
-  Future<void> deleteImage(String path) async {
-    final root = await getApplicationDocumentsDirectory();
-    final dir =
-        Directory('${root.path}${Platform.pathSeparator}love_care_photos');
-    if (!path.startsWith('${dir.path}${Platform.pathSeparator}')) return;
-    final file = File(path);
-    if (await file.exists()) await file.delete();
-  }
+  Future<void> deleteImage(String path) => deleteStoredImage(path);
 
   Future<void> saveOutingStop(OutingStop stop) async {
     final i = _outings.indexWhere((e) => e.id == stop.id);
@@ -559,10 +542,8 @@ class LocalStore extends ChangeNotifier {
     for (final note in _notes) {
       final item = note.toJson()..remove('imagePath');
       if (note.imagePath != null) {
-        final image = File(note.imagePath!);
-        if (await image.exists()) {
-          item['imageBytes'] = base64Encode(await image.readAsBytes());
-        }
+        final bytes = await readStoredImage(note.imagePath!);
+        if (bytes != null) item['imageBytes'] = base64Encode(bytes);
       }
       exportedNotes.add(item);
     }
@@ -570,10 +551,8 @@ class LocalStore extends ChangeNotifier {
     for (final stop in _outings) {
       final item = stop.toJson()..remove('imagePath');
       if (stop.imagePath != null) {
-        final image = File(stop.imagePath!);
-        if (await image.exists()) {
-          item['imageBytes'] = base64Encode(await image.readAsBytes());
-        }
+        final bytes = await readStoredImage(stop.imagePath!);
+        if (bytes != null) item['imageBytes'] = base64Encode(bytes);
       }
       exportedOutings.add(item);
     }
@@ -722,4 +701,3 @@ class LocalStore extends ChangeNotifier {
     notifyListeners();
   }
 }
-

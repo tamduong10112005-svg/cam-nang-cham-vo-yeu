@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../core/app_update_service.dart';
+import '../../core/backup_share.dart';
 import '../../core/local_store.dart';
 import '../../core/notification_service.dart';
 import '../../core/security.dart';
@@ -116,7 +115,7 @@ class ProfilePage extends StatelessWidget {
                         : 'Khóa các ghi chú riêng tư'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _configurePin(context)),
-                if (store.hasPin)
+                if (store.hasPin && !kIsWeb)
                   SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Mở khóa bằng sinh trắc học'),
@@ -138,7 +137,9 @@ class ProfilePage extends StatelessWidget {
                         'Hiểu nàng hơn – Yêu nàng đúng cách – Đồng hành trọn đời.',
                         style: TextStyle(color: Colors.brown.shade400)),
                     const SizedBox(height: 10),
-                    const Text('Phiên bản 1.0 · Lưu trữ cục bộ'),
+                    const Text(kIsWeb
+                        ? 'Bản web · Lưu trữ riêng trên thiết bị'
+                        : 'Phiên bản 1.0 · Lưu trữ cục bộ'),
                     const Divider(height: 24),
                     ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -146,8 +147,9 @@ class ProfilePage extends StatelessWidget {
                             color: Color(0xFFB85F7D)),
                         title: const Text('Cập nhật ứng dụng',
                             style: TextStyle(fontWeight: FontWeight.w700)),
-                        subtitle: const Text(
-                            'Tự kiểm tra khi mở app hoặc tải bản mới từ GitHub'),
+                        subtitle: const Text(kIsWeb
+                            ? 'Bản web tự cập nhật khi mở lại trang'
+                            : 'Tự kiểm tra khi mở app hoặc tải bản mới từ GitHub'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => checkForUpdate(context)),
                     ListTile(
@@ -210,7 +212,14 @@ class ProfilePage extends StatelessWidget {
           .showSnackBar(SnackBar(content: Text(message)));
     }
 
-    if (!Platform.isAndroid) {
+    if (kIsWeb) {
+      if (!automatic) {
+        showMessage(
+            'Bản web được cập nhật qua trang web. Hãy tải lại trang để nhận bản mới.');
+      }
+      return;
+    }
+    if (defaultTargetPlatform != TargetPlatform.android) {
       if (!automatic) {
         showMessage('Cập nhật APK từ GitHub hiện chỉ hỗ trợ Android.');
       }
@@ -224,17 +233,19 @@ class ProfilePage extends StatelessWidget {
       return;
     }
 
-    if (!automatic) showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        content: Row(children: [
-          CircularProgressIndicator(),
-          SizedBox(width: 20),
-          Expanded(child: Text('Đang kiểm tra phiên bản mới…')),
-        ]),
-      ),
-    );
+    if (!automatic) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const AlertDialog(
+          content: Row(children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Expanded(child: Text('Đang kiểm tra phiên bản mới…')),
+          ]),
+        ),
+      );
+    }
     AppRelease? release;
     Object? checkError;
     try {
@@ -384,16 +395,11 @@ Liên hệ nhà phát triển: [thêm địa chỉ email hỗ trợ trước khi
 
   Future<void> _export(BuildContext context) async {
     try {
-      final dir = await getTemporaryDirectory();
-      final file = File(
-          '${dir.path}${Platform.pathSeparator}cam-nang-cham-vo-yeu-${DateTime.now().toIso8601String().substring(0, 10)}.json');
-      await file.writeAsString(
-          const JsonEncoder.withIndent('  ').convert(await store.exportData()),
-          flush: true);
-      await SharePlus.instance.share(ShareParams(
-          files: [XFile(file.path)],
-          subject: 'Bản sao lưu Cẩm nang chăm vợ yêu',
-          text: 'Tệp có dữ liệu cá nhân. Hãy lưu ở nơi riêng tư.'));
+      final name =
+          'cam-nang-cham-vo-yeu-${DateTime.now().toIso8601String().substring(0, 10)}.json';
+      final bytes = utf8.encode(
+          const JsonEncoder.withIndent('  ').convert(await store.exportData()));
+      await shareBackup(name, bytes);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -589,4 +595,3 @@ Liên hệ nhà phát triển: [thêm địa chỉ email hỗ trợ trước khi
     if (clear == true) await store.clearAll();
   }
 }
-
