@@ -5,6 +5,7 @@ import 'core/security.dart';
 import 'features/cycle/cycle_page.dart';
 import 'features/home/home_page.dart';
 import 'features/notebook/notebook_page.dart';
+import 'features/outings/outings_page.dart';
 import 'features/profile/profile_page.dart';
 import 'features/reminders/reminders_page.dart';
 
@@ -15,38 +16,45 @@ class LoveCareApp extends StatelessWidget {
   const LoveCareApp({super.key, required this.store});
   final LocalStore store;
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        title: 'Cẩm nang chăm vợ yêu',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          scaffoldBackgroundColor: const Color(0xFFFFF8FA),
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: _rose,
-              primary: _rose,
-              onSurface: _ink,
-              surface: Colors.white),
-          appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFFFFF8FA),
-              foregroundColor: _ink,
-              elevation: 0),
-          cardTheme: CardThemeData(
-            color: Colors.white,
-            elevation: 0,
-            margin: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-                side: const BorderSide(color: Color(0xFFF2E8EC))),
+  Widget build(BuildContext context) => AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        final accent = Color(store.themeColorValue);
+        final soft =
+            Color.alphaBlend(accent.withValues(alpha: .12), Colors.white);
+        return MaterialApp(
+          title: 'Cẩm nang chăm vợ yêu',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            useMaterial3: true,
+            scaffoldBackgroundColor: soft,
+            colorScheme: ColorScheme.fromSeed(
+                seedColor: accent,
+                primary: accent,
+                onSurface: _ink,
+                surface: Colors.white),
+            appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFFFFF8FA),
+                foregroundColor: _ink,
+                elevation: 0),
+            cardTheme: CardThemeData(
+              color: Colors.white,
+              elevation: 0,
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                  side: const BorderSide(color: Color(0xFFF2E8EC))),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: const Color(0xFFFFF8FA),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none)),
           ),
-          inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: const Color(0xFFFFF8FA),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none)),
-        ),
-        home: LockGate(store: store),
-      );
+          home: LockGate(store: store),
+        );
+      });
 }
 
 class MainShell extends StatefulWidget {
@@ -66,6 +74,7 @@ class _MainShellState extends State<MainShell> {
           onOpen: (index) => setState(() => _index = index)),
       NotebookPage(store: widget.store),
       CyclePage(store: widget.store),
+      OutingsPage(store: widget.store),
       RemindersPage(store: widget.store),
       ProfilePage(store: widget.store),
     ];
@@ -90,6 +99,10 @@ class _MainShellState extends State<MainShell> {
               icon: Icon(Icons.calendar_month_outlined),
               selectedIcon: Icon(Icons.calendar_month),
               label: 'Chu kỳ'),
+          NavigationDestination(
+              icon: Icon(Icons.map_outlined),
+              selectedIcon: Icon(Icons.map),
+              label: 'Đi chơi'),
           NavigationDestination(
               icon: Icon(Icons.notifications_none),
               selectedIcon: Icon(Icons.notifications),
@@ -217,3 +230,4 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     ))));
   }
 }
+
