@@ -147,9 +147,9 @@ class ProfilePage extends StatelessWidget {
                         title: const Text('Cập nhật ứng dụng',
                             style: TextStyle(fontWeight: FontWeight.w700)),
                         subtitle: const Text(
-                            'Kiểm tra và tải phiên bản mới từ GitHub'),
+                            'Tự kiểm tra khi mở app hoặc tải bản mới từ GitHub'),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _checkForUpdate(context)),
+                        onTap: () => checkForUpdate(context)),
                     ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.privacy_tip_outlined,
@@ -202,20 +202,29 @@ class ProfilePage extends StatelessWidget {
     if (selected != null) await store.saveThemeColor(selected);
   }
 
-  Future<void> _checkForUpdate(BuildContext context) async {
+  static Future<void> checkForUpdate(BuildContext context,
+      {bool automatic = false}) async {
+    void showMessage(String message) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+
     if (!Platform.isAndroid) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Cập nhật APK từ GitHub hiện chỉ hỗ trợ Android.')));
+      if (!automatic) {
+        showMessage('Cập nhật APK từ GitHub hiện chỉ hỗ trợ Android.');
+      }
       return;
     }
 
     if (!AppUpdateService.isConfigured) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Bản phát hành này chưa được nối với kho GitHub.')));
+      if (!automatic) {
+        showMessage('Bản phát hành này chưa được nối với kho GitHub.');
+      }
       return;
     }
 
-    showDialog<void>(
+    if (!automatic) showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => const AlertDialog(
@@ -234,16 +243,14 @@ class ProfilePage extends StatelessWidget {
       checkError = error;
     }
     if (!context.mounted) return;
-    Navigator.of(context, rootNavigator: true).pop();
+    if (!automatic) Navigator.of(context, rootNavigator: true).pop();
 
     if (checkError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Không kiểm tra được: $checkError')));
+      if (!automatic) showMessage('Không kiểm tra được: $checkError');
       return;
     }
     if (release == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ứng dụng đang ở phiên bản mới nhất.')));
+      if (!automatic) showMessage('Ứng dụng đang ở phiên bản mới nhất.');
       return;
     }
     final availableRelease = release;
