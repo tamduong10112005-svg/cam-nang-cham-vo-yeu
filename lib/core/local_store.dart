@@ -74,7 +74,7 @@ class PlannerEntry {
   final DateTime? date;
   final int priority;
   final bool done, notification;
-  // none, monthly, or yearly; older backups default to no recurrence.
+  // none, daily, weekly, monthly, or yearly.
   final String repeat;
   PlannerEntry copyWith(
           {String? title,
@@ -147,9 +147,61 @@ class CycleLog {
       pain: (json['pain'] as num?)?.toInt() ?? 0);
 }
 
+@immutable
+class OutingStop {
+  const OutingStop({
+    required this.id,
+    this.tripId = '',
+    required this.timeRange,
+    required this.place,
+    this.note = '',
+    this.address = '',
+    this.link = '',
+    this.imagePath,
+    this.cost = 0,
+  });
+  final String id, timeRange, place, note, address, link;
+  final String tripId;
+  final String? imagePath;
+  final int cost;
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'tripId': tripId,
+        'timeRange': timeRange,
+        'place': place,
+        'note': note,
+        'address': address,
+        'link': link,
+        'imagePath': imagePath,
+        'cost': cost,
+      };
+  factory OutingStop.fromJson(Map<String, dynamic> json) => OutingStop(
+        id: json['id'] as String,
+        tripId: json['tripId'] as String? ?? '',
+        timeRange: json['timeRange'] as String? ?? '',
+        place: json['place'] as String? ?? '',
+        note: json['note'] as String? ?? '',
+        address: json['address'] as String? ?? '',
+        link: json['link'] as String? ?? '',
+        imagePath: json['imagePath'] as String?,
+        cost: (json['cost'] as num?)?.toInt() ?? 0,
+      );
+}
+
+@immutable
+class OutingTrip {
+  const OutingTrip({required this.id, required this.name});
+  final String id, name;
+  Map<String, Object?> toJson() => {'id': id, 'name': name};
+  factory OutingTrip.fromJson(Map<String, dynamic> json) =>
+      OutingTrip(id: json['id'] as String, name: json['name'] as String? ?? '');
+}
+
 class LocalStore extends ChangeNotifier {
   static const _notesKey = 'notes.v1',
       _plannerKey = 'planner.v1',
+      _outingsKey = 'outings.v1',
+      _outingTripsKey = 'outingTrips.v1',
       _cyclesKey = 'cycles.v1';
   static const _cycleStartKey = 'cycle.start.v1',
       _cycleLengthKey = 'cycle.length.v1',
@@ -168,14 +220,20 @@ class LocalStore extends ChangeNotifier {
   Map<String, dynamic> _private = {};
   List<NoteEntry> _notes = [];
   List<PlannerEntry> _planner = [];
+  List<OutingStop> _outings = [];
+  List<OutingTrip> _outingTrips = [];
   List<CycleLog> _cycles = [];
   List<NoteEntry> get notes => List.unmodifiable(_notes);
   List<PlannerEntry> get planner => List.unmodifiable(_planner);
+  List<OutingStop> get outings => List.unmodifiable(_outings);
+  List<OutingTrip> get outingTrips => List.unmodifiable(_outingTrips);
   List<CycleLog> get cycles => List.unmodifiable(_cycles);
   DateTime? get cycleStart =>
       DateTime.tryParse(_private['cycleStart'] as String? ?? '');
   int get cycleLength => (_private['cycleLength'] as num?)?.toInt() ?? 28;
   String get nickname => _private['nickname'] as String? ?? '';
+  int get themeColorValue =>
+      (_private['themeColor'] as num?)?.toInt() ?? 0xFFB85F7D;
   bool get hasPin => _prefs.getString(_pinKey) != null;
   String? get pinHash => _prefs.getString(_pinKey);
   bool get biometricEnabled => _prefs.getBool(_bioKey) ?? false;
@@ -227,6 +285,27 @@ class LocalStore extends ChangeNotifier {
     await _savePrivate();
     _notes = await _decodeList(_notesKey, NoteEntry.fromJson);
     _planner = await _decodeList(_plannerKey, PlannerEntry.fromJson);
+    _outings = await _decodeList(_outingsKey, OutingStop.fromJson);
+    _outingTrips = await _decodeList(_outingTripsKey, OutingTrip.fromJson);
+    if (_outingTrips.isEmpty && _outings.isNotEmpty) {
+      const legacyId = 'legacy-outing-plan';
+      _outingTrips = const [OutingTrip(id: legacyId, name: 'Chuyến đi đã lưu')];
+      _outings = _outings
+          .map((stop) => OutingStop(
+                id: stop.id,
+                tripId: legacyId,
+                timeRange: stop.timeRange,
+                place: stop.place,
+                note: stop.note,
+                address: stop.address,
+                link: stop.link,
+                imagePath: stop.imagePath,
+                cost: stop.cost,
+              ))
+          .toList();
+      await _saveList(_outingTripsKey, _outingTrips, (e) => e.toJson());
+      await _saveList(_outingsKey, _outings, (e) => e.toJson());
+    }
     _cycles = await _decodeList(_cyclesKey, CycleLog.fromJson);
     if (_cycles.isEmpty && cycleStart != null) {
       _cycles = [
@@ -323,6 +402,44 @@ class LocalStore extends ChangeNotifier {
     if (await file.exists()) await file.delete();
   }
 
+  Future<void> saveOutingStop(OutingStop stop) async {
+    final i = _outings.indexWhere((e) => e.id == stop.id);
+    if (i < 0) {
+      _outings = [..._outings, stop];
+    } else {
+      _outings[i] = stop;
+    }
+    await _saveList(_outingsKey, _outings, (e) => e.toJson());
+  }
+
+  Future<void> saveOutingTrip(OutingTrip trip) async {
+    final i = _outingTrips.indexWhere((e) => e.id == trip.id);
+    if (i < 0) {
+      _outingTrips = [..._outingTrips, trip];
+    } else {
+      _outingTrips[i] = trip;
+    }
+    await _saveList(_outingTripsKey, _outingTrips, (e) => e.toJson());
+  }
+
+  Future<void> deleteOutingTrip(String id) async {
+    final removed = _outings.where((e) => e.tripId == id).toList();
+    for (final stop in removed) {
+      if (stop.imagePath != null) await deleteImage(stop.imagePath!);
+    }
+    _outings.removeWhere((e) => e.tripId == id);
+    _outingTrips.removeWhere((e) => e.id == id);
+    await _saveList(_outingsKey, _outings, (e) => e.toJson());
+    await _saveList(_outingTripsKey, _outingTrips, (e) => e.toJson());
+  }
+
+  Future<void> deleteOutingStop(String id) async {
+    final stop = _outings.where((e) => e.id == id).firstOrNull;
+    if (stop?.imagePath != null) await deleteImage(stop!.imagePath!);
+    _outings.removeWhere((e) => e.id == id);
+    await _saveList(_outingsKey, _outings, (e) => e.toJson());
+  }
+
   Future<void> savePlanner(PlannerEntry item) async {
     final i = _planner.indexWhere((e) => e.id == item.id);
     if (i < 0) {
@@ -390,6 +507,12 @@ class LocalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> saveThemeColor(int value) async {
+    _private['themeColor'] = value;
+    await _savePrivate();
+    notifyListeners();
+  }
+
   Future<void> saveSeasonMonths(List<int> months) async {
     await _prefs.setStringList(
         _seasonKey, months.map((e) => e.toString()).toList());
@@ -443,16 +566,30 @@ class LocalStore extends ChangeNotifier {
       }
       exportedNotes.add(item);
     }
+    final exportedOutings = <Map<String, Object?>>[];
+    for (final stop in _outings) {
+      final item = stop.toJson()..remove('imagePath');
+      if (stop.imagePath != null) {
+        final image = File(stop.imagePath!);
+        if (await image.exists()) {
+          item['imageBytes'] = base64Encode(await image.readAsBytes());
+        }
+      }
+      exportedOutings.add(item);
+    }
     return {
       'format': 'love-care-backup-v1',
       'exportedAt': DateTime.now().toIso8601String(),
       'notes': exportedNotes,
       'planner': _planner.map((e) => e.toJson()).toList(),
+      'outings': exportedOutings,
+      'outingTrips': _outingTrips.map((e) => e.toJson()).toList(),
       'cycles': _cycles.map((e) => e.toJson()).toList(),
       'settings': {
         'cycleStart': cycleStart?.toIso8601String(),
         'cycleLength': cycleLength,
         'nickname': nickname,
+        'themeColor': themeColorValue,
         'seasonMonths': seasonMonths,
         'remindersEnabled': remindersEnabled,
         'notificationSettings': notificationSettings,
@@ -471,6 +608,9 @@ class LocalStore extends ChangeNotifier {
             .toList();
     for (final note in _notes) {
       if (note.imagePath != null) await deleteImage(note.imagePath!);
+    }
+    for (final stop in _outings) {
+      if (stop.imagePath != null) await deleteImage(stop.imagePath!);
     }
     final noteData = (data['notes'] as List? ?? [])
         .map((e) => Map<String, dynamic>.from(e as Map))
@@ -492,16 +632,57 @@ class LocalStore extends ChangeNotifier {
       _notes.add(note);
     }
     _planner = read('planner', PlannerEntry.fromJson);
+    _outings = [];
+    for (final raw in (data['outings'] as List? ?? [])) {
+      final item = Map<String, dynamic>.from(raw as Map);
+      final imageBytes = item.remove('imageBytes') as String?;
+      var stop = OutingStop.fromJson(item);
+      if (imageBytes != null) {
+        stop = OutingStop(
+          id: stop.id,
+          tripId: stop.tripId,
+          timeRange: stop.timeRange,
+          place: stop.place,
+          note: stop.note,
+          address: stop.address,
+          link: stop.link,
+          imagePath: await saveImageBytes(base64Decode(imageBytes)),
+          cost: stop.cost,
+        );
+      }
+      _outings.add(stop);
+    }
+    _outingTrips = read('outingTrips', OutingTrip.fromJson);
+    if (_outingTrips.isEmpty && _outings.isNotEmpty) {
+      const legacyId = 'legacy-outing-plan';
+      _outingTrips = const [OutingTrip(id: legacyId, name: 'Chuyến đi đã lưu')];
+      _outings = _outings
+          .map((stop) => OutingStop(
+                id: stop.id,
+                tripId: stop.tripId.isEmpty ? legacyId : stop.tripId,
+                timeRange: stop.timeRange,
+                place: stop.place,
+                note: stop.note,
+                address: stop.address,
+                link: stop.link,
+                imagePath: stop.imagePath,
+                cost: stop.cost,
+              ))
+          .toList();
+    }
     _cycles = read('cycles', CycleLog.fromJson);
     final settings =
         Map<String, dynamic>.from((data['settings'] as Map?) ?? {});
     _private = {
       'cycleStart': settings['cycleStart'],
       'cycleLength': (settings['cycleLength'] as num?)?.toInt() ?? 28,
-      'nickname': settings['nickname'] as String? ?? ''
+      'nickname': settings['nickname'] as String? ?? '',
+      'themeColor': (settings['themeColor'] as num?)?.toInt() ?? 0xFFB85F7D
     };
     await _saveList(_notesKey, _notes, (e) => e.toJson());
     await _saveList(_plannerKey, _planner, (e) => e.toJson());
+    await _saveList(_outingsKey, _outings, (e) => e.toJson());
+    await _saveList(_outingTripsKey, _outingTrips, (e) => e.toJson());
     await _saveList(_cyclesKey, _cycles, (e) => e.toJson());
     await _savePrivate();
     final months = (settings['seasonMonths'] as List?)
@@ -527,8 +708,13 @@ class LocalStore extends ChangeNotifier {
     for (final note in _notes) {
       if (note.imagePath != null) await deleteImage(note.imagePath!);
     }
+    for (final stop in _outings) {
+      if (stop.imagePath != null) await deleteImage(stop.imagePath!);
+    }
     _notes = [];
     _planner = [];
+    _outings = [];
+    _outingTrips = [];
     _cycles = [];
     _private = {};
     await _prefs.clear();
@@ -536,3 +722,4 @@ class LocalStore extends ChangeNotifier {
     notifyListeners();
   }
 }
+
