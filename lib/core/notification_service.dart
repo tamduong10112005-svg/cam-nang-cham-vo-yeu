@@ -116,11 +116,23 @@ class NotificationService {
     })) {
       final isAnnual = entry.repeat == 'yearly';
       final isMonthly = entry.repeat == 'monthly';
-      final repeats = isAnnual || isMonthly;
+      final isDaily = entry.repeat == 'daily';
+      final isWeekly = entry.repeat == 'weekly';
+      final repeats = isAnnual || isMonthly || isDaily || isWeekly;
       var day = tz.TZDateTime(tz.local, entry.date!.year, entry.date!.month,
           entry.date!.day, store.reminderHour);
       if (repeats && !day.isAfter(now)) {
-        if (isAnnual) {
+        if (isDaily) {
+          day = tz.TZDateTime(
+              tz.local, now.year, now.month, now.day, store.reminderHour);
+          if (!day.isAfter(now)) day = day.add(const Duration(days: 1));
+        } else if (isWeekly) {
+          final daysUntil = (day.weekday - now.weekday + 7) % 7;
+          day = tz.TZDateTime(
+                  tz.local, now.year, now.month, now.day, store.reminderHour)
+              .add(Duration(days: daysUntil));
+          if (!day.isAfter(now)) day = day.add(const Duration(days: 7));
+        } else if (isAnnual) {
           day = tz.TZDateTime(
               tz.local, now.year + 1, day.month, day.day, store.reminderHour);
         } else {
@@ -168,7 +180,11 @@ class NotificationService {
               ? DateTimeComponents.dateAndTime
               : isMonthly
                   ? DateTimeComponents.dayOfMonthAndTime
-                  : null,
+                  : isDaily
+                      ? DateTimeComponents.time
+                      : isWeekly
+                          ? DateTimeComponents.dayOfWeekAndTime
+                          : null,
           notificationDetails: const NotificationDetails(
               android: AndroidNotificationDetails(
                   'planned_events', 'Lịch đã lên kế hoạch',
@@ -185,3 +201,4 @@ class NotificationService {
     }
   }
 }
+
