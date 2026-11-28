@@ -14,6 +14,14 @@ import '../../shared/widgets.dart';
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key, required this.store});
   final LocalStore store;
+  static const _themeColors = <(String, int)>[
+    ('Hồng', 0xFFB85F7D),
+    ('Tím', 0xFF8156C5),
+    ('Xanh dương', 0xFF3979B8),
+    ('Xanh lá', 0xFF43866B),
+    ('Cam đào', 0xFFD27B56),
+    ('Đỏ rượu', 0xFF9B4E62),
+  ];
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
@@ -39,6 +47,21 @@ class ProfilePage extends StatelessWidget {
                           : store.nickname),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _editNickname(context))),
+              const SizedBox(height: 10),
+              SoftCard(
+                  child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.palette_outlined,
+                          color: Color(store.themeColorValue)),
+                      title: const Text('Màu giao diện',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text(_themeColors
+                              .where((item) => item.$2 == store.themeColorValue)
+                              .map((item) => item.$1)
+                              .firstOrNull ??
+                          'Tùy chỉnh'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _chooseThemeColor(context))),
               const SizedBox(height: 14),
               const SectionLabel('Sao lưu dữ liệu'),
               const SizedBox(height: 10),
@@ -144,6 +167,40 @@ class ProfilePage extends StatelessWidget {
                       foregroundColor: Colors.red.shade700)),
             ]),
       );
+
+  Future<void> _chooseThemeColor(BuildContext context) async {
+    final selected = await showDialog<int>(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('Chọn màu giao diện'),
+              content: Wrap(
+                  spacing: 14,
+                  runSpacing: 14,
+                  children: _themeColors
+                      .map((item) => Tooltip(
+                            message: item.$1,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context, item.$2),
+                              borderRadius: BorderRadius.circular(32),
+                              child: CircleAvatar(
+                                radius: 25,
+                                backgroundColor: Color(item.$2),
+                                child: store.themeColorValue == item.$2
+                                    ? const Icon(Icons.check,
+                                        color: Colors.white)
+                                    : null,
+                              ),
+                            ),
+                          ))
+                      .toList()),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Đóng'))
+              ],
+            ));
+    if (selected != null) await store.saveThemeColor(selected);
+  }
 
   Future<void> _checkForUpdate(BuildContext context) async {
     if (!Platform.isAndroid) {
@@ -525,3 +582,4 @@ Liên hệ nhà phát triển: [thêm địa chỉ email hỗ trợ trước khi
     if (clear == true) await store.clearAll();
   }
 }
+
